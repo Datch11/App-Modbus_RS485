@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- USB Device Filter for RS485/Serial Adapters -->
+    <!-- This will match any USB device. You can add specific vendor-id and product-id if needed -->
+    <usb-device />
+</resources>
