@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import '../services/serial_service.dart';
 import '../../data/models/modbus_request.dart';
 import '../../data/models/modbus_response.dart';
@@ -114,8 +115,26 @@ class ModbusService {
         return null;
       }
 
-      // Wait for response
-      final responseBytes = await _serialService.read(timeout: _timeout);
+      // Wait for response from dataStream
+      final completer = Completer<Uint8List?>();
+      StreamSubscription? subscription;
+
+      subscription = _serialService.dataStream.listen((data) {
+        if (!completer.isCompleted) {
+          completer.complete(data);
+          subscription?.cancel();
+        }
+      });
+
+      // Timeout handling
+      final responseBytes = await completer.future.timeout(
+        _timeout,
+        onTimeout: () {
+          subscription?.cancel();
+          return null;
+        },
+      );
+
       if (responseBytes == null) {
         Logger.warning('No response received', 'MODBUS');
         return null;

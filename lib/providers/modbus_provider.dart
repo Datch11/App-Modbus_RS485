@@ -51,12 +51,12 @@ class ModbusProvider with ChangeNotifier {
   bool get isConnected => _status == ConnectionStatus.connected;
   DataDisplayMode get displayMode => _displayMode;
 
-  /// Scan for serial ports
+  /// Scan for available serial ports
   Future<void> scanPorts() async {
     try {
       _setLoading(true);
       Logger.ui('Scanning for serial ports...');
-      _availablePorts = _serialService.getAvailablePorts();
+      _availablePorts = await _serialService.getAvailablePortsAsync();
       notifyListeners();
       Logger.ui('Found ${_availablePorts.length} port(s)');
     } catch (e, stackTrace) {
