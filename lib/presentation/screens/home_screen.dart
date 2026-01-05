@@ -104,51 +104,60 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build connection status card
   Widget _buildStatusCard() {
-    return Consumer<ModbusProvider>(
-      builder: (context, provider, _) {
-        return ConnectionCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(AppStrings.connectionStatus, style: AppTheme.labelMedium),
-              const SizedBox(height: AppTheme.spacingM),
-              StatusIndicator(status: provider.status),
-              const SizedBox(height: AppTheme.spacingM),
-              if (provider.selectedPort != null) ...[
-                const Divider(color: AppColors.divider),
-                const SizedBox(height: AppTheme.spacingM),
-                _buildInfoRow('Port', provider.selectedPort ?? 'Unknown'),
-                _buildInfoRow('Baud Rate', '${provider.baudRate}'),
-                _buildInfoRow('Slave Address', '${provider.slaveAddress}'),
-                _buildInfoRow(
-                  'Port Config',
-                  '${provider.dataBits}${provider.parity[0]}${provider.stopBits}',
-                ),
-              ],
-              const SizedBox(height: AppTheme.spacingM),
-              Row(
+    return ConnectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(AppStrings.connectionStatus, style: AppTheme.labelMedium),
+          const SizedBox(height: AppTheme.spacingM),
+
+          // Only wrap dynamic parts in Consumer
+          Consumer<ModbusProvider>(
+            builder: (context, provider, _) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: CustomButton(
-                      text: provider.isConnected
-                          ? AppStrings.disconnect
-                          : AppStrings.connect,
-                      icon: provider.isConnected ? Icons.link_off : Icons.link,
-                      onPressed: provider.isConnected
-                          ? () => provider.disconnect()
-                          : () => _navigateToConnection(context),
-                      color: provider.isConnected
-                          ? AppColors.error
-                          : AppColors.success,
+                  StatusIndicator(status: provider.status),
+                  const SizedBox(height: AppTheme.spacingM),
+                  if (provider.selectedPort != null) ...[
+                    const Divider(color: AppColors.divider),
+                    const SizedBox(height: AppTheme.spacingM),
+                    _buildInfoRow('Port', provider.selectedPort ?? 'Unknown'),
+                    _buildInfoRow('Baud Rate', '${provider.baudRate}'),
+                    _buildInfoRow('Slave Address', '${provider.slaveAddress}'),
+                    _buildInfoRow(
+                      'Port Config',
+                      '${provider.dataBits}${provider.parity[0]}${provider.stopBits}',
                     ),
+                  ],
+                  const SizedBox(height: AppTheme.spacingM),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomButton(
+                          text: provider.isConnected
+                              ? AppStrings.disconnect
+                              : AppStrings.connect,
+                          icon: provider.isConnected
+                              ? Icons.link_off
+                              : Icons.link,
+                          onPressed: provider.isConnected
+                              ? () => provider.disconnect()
+                              : () => _navigateToConnection(context),
+                          color: provider.isConnected
+                              ? AppColors.error
+                              : AppColors.success,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
-        ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2, end: 0);
-      },
-    );
+        ],
+      ),
+    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2, end: 0);
   }
 
   /// Build info row
@@ -173,65 +182,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build message input section
   Widget _buildMessageInput() {
-    return Consumer<ModbusProvider>(
-      builder: (context, provider, _) {
-        return ConnectionCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Send Data', style: AppTheme.headlineSmall),
-              const SizedBox(height: AppTheme.spacingS),
-              // Error message if exists
-              if (provider.errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingS),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: AppTheme.borderRadiusS,
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 16,
-                      ),
-                      const SizedBox(width: AppTheme.spacingS),
-                      Expanded(
-                        child: Text(
-                          provider.errorMessage!,
-                          style: AppTheme.labelSmall.copyWith(
-                            color: AppColors.error,
-                          ),
+    return ConnectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Send Data', style: AppTheme.headlineSmall),
+          const SizedBox(height: AppTheme.spacingS),
+
+          // Only wrap dynamic parts in Consumer
+          Consumer<ModbusProvider>(
+            builder: (context, provider, _) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Error message if exists
+                  if (provider.errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        borderRadius: AppTheme.borderRadiusS,
+                        border: Border.all(
+                          color: AppColors.error.withOpacity(0.3),
                         ),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 16,
+                          ),
+                          const SizedBox(width: AppTheme.spacingS),
+                          Expanded(
+                            child: Text(
+                              provider.errorMessage!,
+                              style: AppTheme.labelSmall.copyWith(
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spacingS),
+                  ],
+                  // 3 Send fields with hex support
+                  SendDataField(
+                    index: 0,
+                    isEnabled: provider.isConnected && !provider.isLoading,
+                    onSend: (data) => _handleFieldSend(provider, data),
                   ),
-                ),
-                const SizedBox(height: AppTheme.spacingS),
-              ],
-              // 3 Send fields with hex support
-              SendDataField(
-                index: 0,
-                isEnabled: provider.isConnected && !provider.isLoading,
-                onSend: (data) => _handleFieldSend(provider, data),
-              ),
-              SendDataField(
-                index: 1,
-                isEnabled: provider.isConnected && !provider.isLoading,
-                onSend: (data) => _handleFieldSend(provider, data),
-              ),
-              SendDataField(
-                index: 2,
-                isEnabled: provider.isConnected && !provider.isLoading,
-                onSend: (data) => _handleFieldSend(provider, data),
-              ),
-            ],
+                  SendDataField(
+                    index: 1,
+                    isEnabled: provider.isConnected && !provider.isLoading,
+                    onSend: (data) => _handleFieldSend(provider, data),
+                  ),
+                  SendDataField(
+                    index: 2,
+                    isEnabled: provider.isConnected && !provider.isLoading,
+                    onSend: (data) => _handleFieldSend(provider, data),
+                  ),
+                ],
+              );
+            },
           ),
-        ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2, end: 0);
-      },
-    );
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2, end: 0);
   }
 
   /// Build message history

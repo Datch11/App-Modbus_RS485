@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/modbus_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/connection_card.dart';
+import '../widgets/slave_address_field.dart';
 
 /// Connection configuration screen
 class ConnectionScreen extends StatefulWidget {
@@ -235,148 +236,128 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
 
   /// Build connection settings
   Widget _buildConnectionSettings() {
-    return Consumer<ModbusProvider>(
-      builder: (context, provider, _) {
-        return ConnectionCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Connection Settings', style: AppTheme.headlineSmall),
-              const SizedBox(height: AppTheme.spacingM),
+    // Remove Consumer wrapper - use context.watch() only for values that change
+    return ConnectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Connection Settings', style: AppTheme.headlineSmall),
+          const SizedBox(height: AppTheme.spacingM),
 
-              // Baud Rate
-              _buildSettingRow(
-                label: AppStrings.baudRate,
-                child: DropdownButton<int>(
-                  value: provider.baudRate,
-                  dropdownColor: AppColors.surface,
-                  style: AppTheme.bodyMedium,
-                  underline: Container(),
-                  items: AppStrings.baudRateOptions.map((rate) {
-                    return DropdownMenuItem(value: rate, child: Text('$rate'));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) provider.setBaudRate(value);
-                  },
-                ),
+          // Baud Rate
+          _buildSettingRow(
+            label: AppStrings.baudRate,
+            child: Consumer<ModbusProvider>(
+              builder: (context, provider, _) => DropdownButton<int>(
+                value: provider.baudRate,
+                dropdownColor: AppColors.surface,
+                style: AppTheme.bodyMedium,
+                underline: Container(),
+                items: AppStrings.baudRateOptions.map((rate) {
+                  return DropdownMenuItem(value: rate, child: Text('$rate'));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) provider.setBaudRate(value);
+                },
               ),
-
-              const Divider(color: AppColors.divider),
-
-              // Data Bits
-              _buildSettingRow(
-                label: 'Data Bits',
-                child: DropdownButton<int>(
-                  value: provider.dataBits,
-                  dropdownColor: AppColors.surface,
-                  style: AppTheme.bodyMedium,
-                  underline: Container(),
-                  items: [5, 6, 7, 8].map((bits) {
-                    return DropdownMenuItem(value: bits, child: Text('$bits'));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) provider.setDataBits(value);
-                  },
-                ),
-              ),
-
-              const Divider(color: AppColors.divider),
-
-              // Parity
-              _buildSettingRow(
-                label: 'Parity',
-                child: DropdownButton<String>(
-                  value: provider.parity,
-                  dropdownColor: AppColors.surface,
-                  style: AppTheme.bodyMedium,
-                  underline: Container(),
-                  items: ['None', 'Even', 'Odd'].map((p) {
-                    return DropdownMenuItem(value: p, child: Text(p));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) provider.setParity(value);
-                  },
-                ),
-              ),
-
-              const Divider(color: AppColors.divider),
-
-              // Stop Bits
-              _buildSettingRow(
-                label: 'Stop Bits',
-                child: DropdownButton<int>(
-                  value: provider.stopBits,
-                  dropdownColor: AppColors.surface,
-                  style: AppTheme.bodyMedium,
-                  underline: Container(),
-                  items: [1, 2].map((bits) {
-                    return DropdownMenuItem(value: bits, child: Text('$bits'));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) provider.setStopBits(value);
-                  },
-                ),
-              ),
-
-              const Divider(color: AppColors.divider),
-
-              // Handshake
-              _buildSettingRow(
-                label: 'Handshake',
-                child: DropdownButton<String>(
-                  value: provider.handshake,
-                  dropdownColor: AppColors.surface,
-                  style: AppTheme.bodyMedium,
-                  underline: Container(),
-                  items: ['None', 'Hardware', 'Software'].map((hs) {
-                    return DropdownMenuItem(value: hs, child: Text(hs));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) provider.setHandshake(value);
-                  },
-                ),
-              ),
-
-              const Divider(color: AppColors.divider),
-
-              // Slave Address
-              _buildSettingRow(
-                label: AppStrings.slaveAddress,
-                child: SizedBox(
-                  width: 80,
-                  child: TextField(
-                    controller: TextEditingController(
-                      text: provider.slaveAddress.toString(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: AppTheme.bodyMedium,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: AppTheme.borderRadiusM,
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacingS,
-                        vertical: AppTheme.spacingS,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      final address = int.tryParse(value);
-                      if (address != null && address >= 1 && address <= 247) {
-                        provider.setSlaveAddress(address);
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2, end: 0);
-      },
-    );
+
+          const Divider(color: AppColors.divider),
+
+          // Data Bits
+          _buildSettingRow(
+            label: 'Data Bits',
+            child: Consumer<ModbusProvider>(
+              builder: (context, provider, _) => DropdownButton<int>(
+                value: provider.dataBits,
+                dropdownColor: AppColors.surface,
+                style: AppTheme.bodyMedium,
+                underline: Container(),
+                items: [5, 6, 7, 8].map((bits) {
+                  return DropdownMenuItem(value: bits, child: Text('$bits'));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) provider.setDataBits(value);
+                },
+              ),
+            ),
+          ),
+
+          const Divider(color: AppColors.divider),
+
+          // Parity
+          _buildSettingRow(
+            label: 'Parity',
+            child: Consumer<ModbusProvider>(
+              builder: (context, provider, _) => DropdownButton<String>(
+                value: provider.parity,
+                dropdownColor: AppColors.surface,
+                style: AppTheme.bodyMedium,
+                underline: Container(),
+                items: ['None', 'Even', 'Odd'].map((p) {
+                  return DropdownMenuItem(value: p, child: Text(p));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) provider.setParity(value);
+                },
+              ),
+            ),
+          ),
+
+          const Divider(color: AppColors.divider),
+
+          // Stop Bits
+          _buildSettingRow(
+            label: 'Stop Bits',
+            child: Consumer<ModbusProvider>(
+              builder: (context, provider, _) => DropdownButton<int>(
+                value: provider.stopBits,
+                dropdownColor: AppColors.surface,
+                style: AppTheme.bodyMedium,
+                underline: Container(),
+                items: [1, 2].map((bits) {
+                  return DropdownMenuItem(value: bits, child: Text('$bits'));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) provider.setStopBits(value);
+                },
+              ),
+            ),
+          ),
+
+          const Divider(color: AppColors.divider),
+
+          // Handshake
+          _buildSettingRow(
+            label: 'Handshake',
+            child: Consumer<ModbusProvider>(
+              builder: (context, provider, _) => DropdownButton<String>(
+                value: provider.handshake,
+                dropdownColor: AppColors.surface,
+                style: AppTheme.bodyMedium,
+                underline: Container(),
+                items: ['None', 'Hardware', 'Software'].map((hs) {
+                  return DropdownMenuItem(value: hs, child: Text(hs));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) provider.setHandshake(value);
+                },
+              ),
+            ),
+          ),
+
+          const Divider(color: AppColors.divider),
+
+          // Slave Address
+          _buildSettingRow(
+            label: AppStrings.slaveAddress,
+            child:
+                const SlaveAddressField(), // Using dedicated widget with proper controller lifecycle
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2, end: 0);
   }
 
   /// Build setting row

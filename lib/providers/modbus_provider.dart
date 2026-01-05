@@ -27,6 +27,7 @@ class ModbusProvider with ChangeNotifier {
   int _stopBits = 1;
   String _handshake = 'None'; // None, Hardware, Software
   final Queue<MessageHistory> _messageHistory = Queue();
+  List<MessageHistory>? _cachedMessageHistory; // Cache for performance
   bool _isLoading = false;
   String? _errorMessage;
   DataDisplayMode _displayMode = DataDisplayMode.ascii;
@@ -46,7 +47,12 @@ class ModbusProvider with ChangeNotifier {
   String get parity => _parity;
   int get stopBits => _stopBits;
   String get handshake => _handshake;
-  List<MessageHistory> get messageHistory => _messageHistory.toList();
+  List<MessageHistory> get messageHistory {
+    // Use cached list to avoid expensive Queue.toList() on every build
+    _cachedMessageHistory ??= _messageHistory.toList();
+    return _cachedMessageHistory!;
+  }
+
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isConnected => _status == ConnectionStatus.connected;
@@ -56,10 +62,14 @@ class ModbusProvider with ChangeNotifier {
   Future<void> scanPorts() async {
     try {
       _setLoading(true);
-      Logger.ui('Scanning for serial ports...');
+      if (kDebugMode) {
+        Logger.ui('Scanning for serial ports...');
+      }
       _availablePorts = await _serialService.getAvailablePortsAsync();
       notifyListeners();
-      Logger.ui('Found ${_availablePorts.length} port(s)');
+      if (kDebugMode) {
+        Logger.ui('Found ${_availablePorts.length} port(s)');
+      }
     } catch (e, stackTrace) {
       Logger.error('Failed to scan ports', 'PROVIDER', e, stackTrace);
       _setError('Failed to scan ports: $e');
@@ -71,51 +81,65 @@ class ModbusProvider with ChangeNotifier {
   /// Select port
   void selectPort(String port) {
     _selectedPort = port;
-    Logger.ui('Selected port: $port');
+    if (kDebugMode) {
+      Logger.ui('Selected port: $port');
+    }
     notifyListeners();
   }
 
   /// Set baud rate
   void setBaudRate(int rate) {
     _baudRate = rate;
-    Logger.ui('Baud rate set to $rate');
-    notifyListeners();
+    if (kDebugMode) {
+      Logger.ui('Baud rate set to $rate');
+    }
+    notifyListeners(); // Restore for immediate UI update
   }
 
   /// Set slave address
   void setSlaveAddress(int address) {
     _slaveAddress = address;
     _modbusService.setSlaveAddress(address);
-    Logger.ui('Slave address set to $address');
-    notifyListeners();
+    if (kDebugMode) {
+      Logger.ui('Slave address set to $address');
+    }
+    notifyListeners(); // Restore for immediate UI update
   }
 
   /// Set data bits
   void setDataBits(int bits) {
     _dataBits = bits;
-    Logger.ui('Data bits set to $bits');
-    notifyListeners();
+    if (kDebugMode) {
+      Logger.ui('Data bits set to $bits');
+    }
+    notifyListeners(); // Restore for immediate UI update
   }
 
   /// Set parity
   void setParity(String parity) {
     _parity = parity;
-    Logger.ui('Parity set to $parity');
-    notifyListeners();
+    if (kDebugMode) {
+      Logger.ui('Parity set to $parity');
+    }
+    notifyListeners(); // Restore for immediate UI update
   }
 
   /// Set stop bits
   void setStopBits(int bits) {
     _stopBits = bits;
-    Logger.ui('Stop bits set to $bits');
-    notifyListeners();
+    if (kDebugMode) {
+      Logger.ui('Stop bits set to $bits');
+    }
+    notifyListeners(); // Restore for immediate UI update
   }
 
   /// Set handshake
   void setHandshake(String handshake) {
     _handshake = handshake;
-    Logger.ui('Handshake set to $handshake');
-    notifyListeners();
+    if (kDebugMode) {
+      Logger.ui('Handshake set to $handshake');
+    }
+    notifyListeners(); // Restore for immediate UI update
   }
 
   /// Connect to selected port
@@ -132,7 +156,9 @@ class ModbusProvider with ChangeNotifier {
       // Convert parity string to int
       final parityValue = _parseParity(_parity);
 
-      Logger.ui('Connecting to port $_selectedPort...');
+      if (kDebugMode) {
+        Logger.ui('Connecting to port $_selectedPort...');
+      }
       final success = await _serialService.connect(
         portName: _selectedPort!,
         baudRate: _baudRate,
@@ -165,7 +191,9 @@ class ModbusProvider with ChangeNotifier {
   /// Disconnect from port
   Future<void> disconnect() async {
     try {
-      Logger.ui('Disconnecting...');
+      if (kDebugMode) {
+        Logger.ui('Disconnecting...');
+      }
       await _serialService.disconnect();
       _setStatus(ConnectionStatus.disconnected);
       _selectedPort = null;
@@ -199,7 +227,9 @@ class ModbusProvider with ChangeNotifier {
       _setLoading(true);
       _errorMessage = null;
 
-      Logger.ui('Sending message: "$message"');
+      if (kDebugMode) {
+        Logger.ui('Sending message: "$message"');
+      }
       final success = await _modbusService.sendTextMessage(message);
 
       _addHistory(
@@ -258,7 +288,9 @@ class ModbusProvider with ChangeNotifier {
       // Apply line ending
       final finalBytes = _applyLineEnding(bytes, lineEnding);
 
-      Logger.ui('Sending ${finalBytes.length} bytes: $displayText');
+      if (kDebugMode) {
+        Logger.ui('Sending ${finalBytes.length} bytes: $displayText');
+      }
 
       // Send raw bytes via serial
       final success = await _serialService.write(
@@ -301,15 +333,20 @@ class ModbusProvider with ChangeNotifier {
   /// Clear message history
   void clearHistory() {
     _messageHistory.clear();
+    _cachedMessageHistory = null; // Invalidate cache
     notifyListeners();
-    Logger.ui('Message history cleared');
+    if (kDebugMode) {
+      Logger.ui('Message history cleared');
+    }
   }
 
   /// Set display mode (ASCII or HEX)
   void setDisplayMode(DataDisplayMode mode) {
     if (_displayMode != mode) {
       _displayMode = mode;
-      Logger.ui('Display mode changed to ${mode.label}');
+      if (kDebugMode) {
+        Logger.ui('Display mode changed to ${mode.label}');
+      }
       notifyListeners();
     }
   }
@@ -349,6 +386,8 @@ class ModbusProvider with ChangeNotifier {
       _messageHistory.removeFirst();
     }
 
+    // Invalidate cache so next access rebuilds the list
+    _cachedMessageHistory = null;
     notifyListeners();
   }
 
