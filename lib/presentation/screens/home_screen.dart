@@ -444,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1, end: 0);
+    ); // Removed animation to prevent AnimationController overhead per item
   }
 
   /// Get formatted message based on display mode

@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../domain/services/serial_service.dart';
@@ -25,7 +26,7 @@ class ModbusProvider with ChangeNotifier {
   String _parity = 'None'; // None, Even, Odd
   int _stopBits = 1;
   String _handshake = 'None'; // None, Hardware, Software
-  List<MessageHistory> _messageHistory = [];
+  final Queue<MessageHistory> _messageHistory = Queue();
   bool _isLoading = false;
   String? _errorMessage;
   DataDisplayMode _displayMode = DataDisplayMode.ascii;
@@ -45,7 +46,7 @@ class ModbusProvider with ChangeNotifier {
   String get parity => _parity;
   int get stopBits => _stopBits;
   String get handshake => _handshake;
-  List<MessageHistory> get messageHistory => _messageHistory;
+  List<MessageHistory> get messageHistory => _messageHistory.toList();
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isConnected => _status == ConnectionStatus.connected;
@@ -340,11 +341,12 @@ class ModbusProvider with ChangeNotifier {
   }
 
   void _addHistory(MessageHistory message) {
-    _messageHistory.add(message);
+    _messageHistory.addLast(message);
 
     // Limit history to last 100 messages to prevent memory growth
-    if (_messageHistory.length > 100) {
-      _messageHistory.removeRange(0, _messageHistory.length - 100);
+    // Using Queue.removeFirst() is O(1) vs List.removeRange() O(n)
+    while (_messageHistory.length > 100) {
+      _messageHistory.removeFirst();
     }
 
     notifyListeners();

@@ -119,35 +119,36 @@ class ModbusService {
       final completer = Completer<Uint8List?>();
       StreamSubscription? subscription;
 
-      subscription = _serialService.dataStream.listen((data) {
-        if (!completer.isCompleted) {
-          completer.complete(data);
-          subscription?.cancel();
-        }
-      });
+      try {
+        subscription = _serialService.dataStream.listen((data) {
+          if (!completer.isCompleted) {
+            completer.complete(data);
+          }
+        });
 
-      // Timeout handling
-      final responseBytes = await completer.future.timeout(
-        _timeout,
-        onTimeout: () {
-          subscription?.cancel();
+        // Timeout handling
+        final responseBytes = await completer.future.timeout(
+          _timeout,
+          onTimeout: () => null,
+        );
+
+        if (responseBytes == null) {
+          Logger.warning('No response received', 'MODBUS');
           return null;
-        },
-      );
+        }
 
-      if (responseBytes == null) {
-        Logger.warning('No response received', 'MODBUS');
-        return null;
+        // Parse response
+        final response = ModbusResponse.fromBytes(responseBytes);
+
+        if (!response.isValid) {
+          Logger.error('Invalid response: ${response.errorMessage}', 'MODBUS');
+        }
+
+        return response;
+      } finally {
+        // Always cancel subscription to prevent memory leak
+        await subscription?.cancel();
       }
-
-      // Parse response
-      final response = ModbusResponse.fromBytes(responseBytes);
-
-      if (!response.isValid) {
-        Logger.error('Invalid response: ${response.errorMessage}', 'MODBUS');
-      }
-
-      return response;
     } catch (e, stackTrace) {
       Logger.error('Error in request/response', 'MODBUS', e, stackTrace);
       return null;
