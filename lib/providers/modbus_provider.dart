@@ -341,6 +341,12 @@ class ModbusProvider with ChangeNotifier {
 
   void _addHistory(MessageHistory message) {
     _messageHistory.add(message);
+
+    // Limit history to last 100 messages to prevent memory growth
+    if (_messageHistory.length > 100) {
+      _messageHistory.removeRange(0, _messageHistory.length - 100);
+    }
+
     notifyListeners();
   }
 
