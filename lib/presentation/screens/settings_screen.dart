@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../widgets/connection_card.dart';
-import 'debug_screen.dart';
 
 /// Settings screen
 class SettingsScreen extends StatelessWidget {
@@ -24,11 +23,7 @@ class SettingsScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(AppTheme.spacingM),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildDebugSection(context),
-                      const SizedBox(height: AppTheme.spacingL),
-                      _buildAboutSection(),
-                    ],
+                    children: [_buildAboutSection()],
                   ),
                 ),
               ),
@@ -60,55 +55,6 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn(duration: 300.ms);
-  }
-
-  Widget _buildDebugSection(BuildContext context) {
-    return ConnectionCard(
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const DebugScreen()),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacingM),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spacingS),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: AppTheme.borderRadiusM,
-                ),
-                child: const Icon(
-                  Icons.bug_report,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingM),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Debug Serial Ports', style: AppTheme.bodyLarge),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Check available serial devices on YC-55P',
-                      style: AppTheme.labelSmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildAboutSection() {
