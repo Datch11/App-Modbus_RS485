@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../core/utils/logger.dart';
 
@@ -73,7 +74,10 @@ class NativeSerialService {
       final result = await platform.invokeMethod('write', {'data': data});
 
       if (result as bool) {
-        Logger.serial('Sent ${data.length} bytes');
+        // Only log in debug mode to reduce overhead
+        if (kDebugMode) {
+          Logger.serial('Sent ${data.length} bytes');
+        }
         return true;
       } else {
         Logger.warning('Write failed', 'NATIVE_SERIAL');
@@ -134,14 +138,19 @@ class NativeSerialService {
   void _startReading() {
     _stopReading();
 
-    _readTimer = Timer.periodic(const Duration(milliseconds: 50), (
+    // Reduced from 50ms to 200ms to minimize Platform Channel overhead
+    // Still responsive enough for Modbus (typical response < 200ms)
+    _readTimer = Timer.periodic(const Duration(milliseconds: 200), (
       timer,
     ) async {
       try {
         final data = await read(timeout: 100);
         if (data.isNotEmpty) {
           _dataController.add(data);
-          Logger.serial('Received ${data.length} bytes');
+          // Only log in debug mode to reduce overhead
+          if (kDebugMode) {
+            Logger.serial('Received ${data.length} bytes');
+          }
         }
       } catch (e) {
         // Ignore read errors during polling

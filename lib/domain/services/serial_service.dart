@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 import 'package:libserialport/libserialport.dart';
 import '../../core/utils/logger.dart';
 import 'native_serial_service.dart';
@@ -170,7 +171,9 @@ class SerialService {
           (data) {
             final bytes = Uint8List.fromList(data);
             _dataController.add(bytes);
-            Logger.serial('Received ${bytes.length} bytes');
+            if (kDebugMode) {
+              Logger.serial('Received ${bytes.length} bytes');
+            }
           },
           onError: (error) {
             Logger.error('Serial stream error', 'SERIAL', error);
@@ -201,7 +204,9 @@ class SerialService {
         }
 
         final written = _libPort!.write(data);
-        Logger.serial('Wrote $written bytes');
+        if (kDebugMode) {
+          Logger.serial('Wrote $written bytes');
+        }
         return written == data.length;
       }
     } catch (e, stackTrace) {
